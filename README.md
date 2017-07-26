@@ -23,12 +23,12 @@ Windows and Linux Debugger FrontEnd for cdb and gdb
 
 
 ## 사용
-리눅스의 경우
-$ python gdb_x64.py hello
-윈도우의 경우
+리눅스의 경우<br>
+$ python gdb_x64.py hello<br>
+윈도우의 경우<br>
 \> python cdb_x86.py hello.exe<br>
 또는<br>
-\> cdb_x86.py hello.exe
+\> cdb_x86.py hello.exe<br>
 
 
 
@@ -55,14 +55,14 @@ $ python gdb_x64.py hello
 3. 자체 명령어<br>
 3.1 ,v<br>
   왼쪽 패널 업데이트. ip 레지스터를 수정하거나 변경 사항이 발생했을 때 왼쪽 패널 전체에 적용시킨다. 다음과 같이 사용한다.<br>
-0:000> r @eip=0x004011a8
+0:000> r @eip=0x004011a8<br>
 0:000> ,v
 
 3.2 ,c
   명령어 윈도우 삭제. 일종의 clear 명령어이다.
 
 3.3 ,vs \<address\> 또는 [u, d]<br>
-  ,vs <address>는 현재 디스어셈블리를 해당 주소를 기반으로업데이트 해준다. u 옵션을 사용하면 자동으로 윗 페이지, d 옵션은 아랫 페이지를 보여준다.
+  ,vs \<address\>는 현재 디스어셈블리를 해당 주소를 기반으로업데이트 해준다. u 옵션을 사용하면 자동으로 윗 페이지, d 옵션은 아랫 페이지를 보여준다.
 
 
 4. 기타 기능<br>
