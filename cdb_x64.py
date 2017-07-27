@@ -19,8 +19,6 @@ oldregister = { 'rax' : '0000000000000000', 'rbx' : '0000000000000000', 'rcx' : 
 
 
 
-
-# x64 버전의 경우 주소가 출력될 때  grave 즉 ` 문자가 같이 표시되는데 이 문자를 없애주는 역할을 한다.
 def extractGrave(string, grave='`'):
 	try:
 		nov = string.replace('`', '')
@@ -30,15 +28,12 @@ def extractGrave(string, grave='`'):
 
 
 
-
-# 다시 grave 문자를 삽입해준다.
 def plusGrave(string, grave='`'):
 	try:
 		nov = string[:8] + '`' + string[8:17]
 		return nov
 	except ValueError:
 		return -1
-
 
 
 
@@ -171,6 +166,8 @@ def asmview(preins, isinternal, adres):
 				child.sendline('.printf "%y", poi(' + sym + ')')
 				child.expect('0:000> ')
 				apilist = newstdout.getvalue()
+				newstdout.truncate(0)
+				newstdout.seek(0)
 				apilist = apilist[:-7]
 				line = line[:-1] +'\t' + apilist + '\n'
 				panelDis.insert(END, line)
@@ -181,6 +178,36 @@ def asmview(preins, isinternal, adres):
 				panelDis.tag_config("two", foreground="blue")
 
 				continue
+
+			else:
+				sym = callAddress
+				child.sendline('.printf "%y", poi(' + sym + ')')
+				child.expect('0:000> ')
+				indirect = newstdout.getvalue()
+				newstdout.truncate(0)
+				newstdout.seek(0)
+				if indirect[:4] == "25ff":
+					inp = 'u ' + callAddress
+					child.sendline(inp)
+					child.expect('0:000> ')
+					indr = newstdout.getvalue()
+					newstdout.truncate(0)
+					newstdout.seek(0)
+					addr = extract(indr.splitlines()[1])
+					sym2 = str(addr)
+					child.sendline('.printf "%y", poi(' + sym2 + ')')
+					child.expect('0:000> ')
+					apilist2 = newstdout.getvalue()
+					apilist2 = apilist2[:-7]
+					line = line[:-1] +'\t' + apilist2 + '\n'
+					panelDis.insert(END, line)
+
+					apiFirst = panelDis.search(apilist2, "1.0", END)
+					apiEnd = panelDis.search('\n', apiFirst, END)
+					panelDis.tag_add("two", apiFirst, apiEnd)
+					panelDis.tag_config("two", foreground="blue")
+
+					continue
 
 		panelDis.insert(END, line + '\n')
 
@@ -206,7 +233,7 @@ def asmview(preins, isinternal, adres):
 """
 왼쪽 디스어셈블리, 레지스터, 스택 창을 보여주는 함수.
 일반적으로 t나 p 같은 제어 명령어를 사용하면 세 곳이 모두 업데이트된다.
-참고로 디스어셈블리 창은 내부적으로 위에 정의된 asmview() 함수를 사용한다.
+참고로 디스어셈블리 창은 내부적으로 위에 정의된 disview() 함수를 사용한다.
 """
 def outview():
 	global oldregister
@@ -415,13 +442,11 @@ def func(event):
 		panelCommand.insert(END, '0:000> ')
 		panelCommand.config(state=DISABLED)
 		outview()
-
 	elif firstinp == ',c':
 		# clear 명령어. 오른쪽 텍스트 창을 지운다.
 		panelCommand.config(state=NORMAL)
 		panelCommand.delete('1.0', END)
 		panelCommand.config(state=DISABLED)
-
 	elif firstinp == ',vs':
 		# 왼쪽 디스어셈블리 창에서 인자로 받은 주소를 기준으로 디스어셈블리를 보여준다.
 		# 그냥 텍스트 창에서 u 명령어를 사용해도 되지만 굳이 이 자체 명령어를 만든 이유는
@@ -438,7 +463,6 @@ def func(event):
 			asmview(0, 0, secondAddress)
 		else:
 			asmview(0, 0, inp[4:])
-			
 	else:
 		# 기타의 경우로 오른쪽 텍스트 창에 결과를 보여준다.
 		child.sendline(inp)
