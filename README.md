@@ -16,6 +16,12 @@ Windows and Linux Debugger FrontEnd for cdb and gdb
 
 
 
+## 스크린샷
+![start](http://cfile23.uf.tistory.com/image/2295F8335979868330A9B9)
+
+
+
+
 ## 설치
   가장 먼저 Windbg 또는 Gdb가 설치되어 있어야 한다. 그리고 윈도우의 경우 파이썬3, 리눅스는 파이썬2가 설치되어 있어야 한다. 그리고 추가적으로 pywin32 및 winpexpect(리눅스의 경우 pexpect)를 설치한다. 마지막으로 gdb 또는 cdb의 경로에 대한 환경 변수를 설정할 필요가 있다. 리눅스의 경우 gdb가 분석 대상인 실행 파일의 버전에 맞게 자동으로 실행되지만, 윈도우는 분석 대상의 버전 즉 x86인지 x64인지에 따라 환경변수 경로를 선택해서 설정할 필요가 있다. 또한 윈도우의 경우에는 파이썬의 경로도 환경 변수에 등록하는 것이 편하다. 참고로 리눅스의 경우에는 일반적으로 python2가 설치되어 있지만 Tkinter는 없는 경우가 있다. 이 경우에는 "yum install tkinter" 명령어로 Tkinter를 설치한다.
 
