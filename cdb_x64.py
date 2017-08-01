@@ -266,74 +266,167 @@ def outview():
 					'r9' : rResult[214:230], 'r10' : rResult[235:251], 'r11' : rResult[256:272], 'r12' : rResult[277:293], 'r13' : rResult[298:314], 
 					'r14' : rResult[319:335], 'r15' : rResult[340:356] }
 
-	view = 'rax = ' + newregister['rax'] + '\t\t' + 'rbx = ' + newregister['rbx'] + "\n"
-	view = view + 'rcx = ' + newregister['rcx'] + '\t\t' + 'rdx = ' + newregister['rdx'] + "\n"
-	view = view + 'rsi = ' + newregister['rsi'] + '\t\t' + 'rdi = ' + newregister['rdi'] + "\n"
-	view = view + 'rip = ' + newregister['rip'] + '\t\t' + 'rsp = ' + newregister['rsp'] + "\n"
-	view = view + 'rbp = ' + newregister['rbp'] + '\t\t' + 'r8  = ' + newregister['r8'] + "\n"
-	view = view + 'r9  = ' + newregister['r9']  + '\t\t' + 'r10 = ' + newregister['r10'] + "\n"
-	view = view + 'r11 = ' + newregister['r11'] + '\t\t' + 'r12 = ' + newregister['r12'] + "\n"
-	view = view + 'r13 = ' + newregister['r13'] + '\t\t' + 'r14 = ' + newregister['r14'] + "\n"
-	view = view + 'r15 = ' + newregister['r15'] + "\n"
-	view = view + "" + "\n\n"
+	registerval = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+	# rax, rbx, rcx, rdx, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15
+
+	newstdout.truncate(0)
+	newstdout.seek(0)
+	child.sendline('.printf "rax ";da @rax; .printf "rbx "; da @rbx; .printf "rcx "; da @rcx; .printf "rdx "; da @rdx; .printf "rsi "; da @rsi; .printf "rdi "; da @rdi; .printf "r8 "; da @r8; .printf "r9 "; da @r9; .printf "r10 "; da @r10; .printf "r11 "; da @r11; .printf "r12 "; da @r12; .printf "r13 "; da @r13; .printf "r14 "; da @r14; .printf "r15 "; da @r15; ')
+	child.expect('0:000> ')
+	dResult = newstdout.getvalue()
+
+	for line in dResult.splitlines():
+		if line.split()[0] == 'rax':
+			if line.find('??')>0:
+				registerval[0] = ""
+			else :
+				registerval[0] = line[21:]
+		elif line.split()[0] == 'rbx':
+			if line.find('??')>0:
+				registerval[1] = ""
+			else :
+				registerval[1] = line[21:]
+		elif line.split()[0] == 'rcx':
+			if line.find('??')>0:
+				registerval[2] = ""
+			else :
+				registerval[2] = line[21:]
+		elif line.split()[0] == 'rdx':
+			if line.find('??')>0:
+				registerval[3] = ""
+			else :
+				registerval[3] = line[21:]
+		elif line.split()[0] == 'rsi':
+			if line.find('??')>0:
+				registerval[4] = ""
+			else :
+				registerval[4] = line[21:]
+		elif line.split()[0] == 'rdi':
+			if line.find('??')>0:
+				registerval[5] = ""
+			else :
+				registerval[5] = line[21:]
+		elif line.split()[0] == 'r8':
+			if line.find('??')>0:
+				registerval[6] = ""
+			else :
+				registerval[6] = line[21:]
+		elif line.split()[0] == 'r9':
+			if line.find('??')>0:
+				registerval[7] = ""
+			else :
+				registerval[7] = line[21:]
+		elif line.split()[0] == 'r10':
+			if line.find('??')>0:
+				registerval[8] = ""
+			else :
+				registerval[8] = line[21:]
+		elif line.split()[0] == 'r11':
+			if line.find('??')>0:
+				registerval[9] = ""
+			else :
+				registerval[9] = line[21:]
+		elif line.split()[0] == 'r12':
+			if line.find('??')>0:
+				registerval[10] = ""
+			else :
+				registerval[10] = line[21:]
+		elif line.split()[0] == 'r13':
+			if line.find('??')>0:
+				registerval[11] = ""
+				
+			else :
+				registerval[11] = line[21:]
+		elif line.split()[0] == 'r14':
+			if line.find('??')>0:
+				registerval[12] = ""
+			else :
+				registerval[12] = line[21:]
+		elif line.split()[0] == 'r15':
+			if line.find('??')>0:
+				registerval[13] = ""
+			else :
+				registerval[13] = line[21:]
+
+	view = 'rax = ' + newregister['rax'] + registerval[0] + "\n"
+	view = view + 'rcx = ' + newregister['rcx'] + registerval[2] + "\n"
+	view = view + 'rsi = ' + newregister['rsi'] + registerval[4] + "\n"
+	view = view + 'rip = ' + newregister['rip'] + "\n"
+	view = view + 'rbp = ' + newregister['rbp'] + "\n"
+	view = view + 'r9  = ' + newregister['r9']  + registerval[7] + "\n"
+	view = view + 'r11 = ' + newregister['r11'] + registerval[9] + "\n"
+	view = view + 'r13 = ' + newregister['r13'] + registerval[11] + "\n"
+	view = view + 'r15 = ' + newregister['r15'] + registerval[13] + "\n"
+	
+	view2 = 'rbx = ' + newregister['rbx'] + registerval[1] + "\n"
+	view2 = view2 + 'rdx = ' + newregister['rdx'] + registerval[3] + "\n"
+	view2 = view2 + 'rdi = ' + newregister['rdi'] + registerval[5] + "\n"
+	view2 = view2 + 'rsp = ' + newregister['rsp'] + "\n"
+	view2 = view2 + 'r8  = ' + newregister['r8'] + registerval[6] + "\n"
+	view2 = view2 + 'r10 = ' + newregister['r10'] + registerval[8] + "\n"
+	view2 = view2 + 'r12 = ' + newregister['r12'] + registerval[10] + "\n"
+	view2 = view2 + 'r14 = ' + newregister['r14'] + registerval[12] + "\n"
+
 	panelDis.delete(1.0, END)
-	panelReg.delete(1.0, END)
+	panelReg1.delete(1.0, END)
+	panelReg2.delete(1.0, END)
 	panelStack.delete(1.0, END)
-	panelReg.insert(END, view)
+	panelReg1.insert(END, view)
+	panelReg2.insert(END, view2)
 
 	for key in oldregister:
 		if oldregister[key] != newregister[key]:
 			if key == 'rax':
-				panelReg.tag_add("rax", "1.6", "1.22")
-				panelReg.tag_config("rax", foreground="blue")
+				panelReg1.tag_add("rax", "1.6", "1.22")
+				panelReg1.tag_config("rax", foreground="blue")
 			elif key == 'rbx':
-				panelReg.tag_add("rbx", "1.30", "1.46")
-				panelReg.tag_config("rbx", foreground="blue")
+				panelReg2.tag_add("rbx", "1.6", "1.22")
+				panelReg2.tag_config("rbx", foreground="blue")
 			elif key == 'rcx':
-				panelReg.tag_add("rcx", "2.6", "2.22")
-				panelReg.tag_config("rcx", foreground="blue")
+				panelReg1.tag_add("rcx", "2.6", "2.22")
+				panelReg1.tag_config("rcx", foreground="blue")
 			elif key == 'rdx':
-				panelReg.tag_add("rdx", "2.30", "2.46")
-				panelReg.tag_config("rdx", foreground="blue")
+				panelReg2.tag_add("rdx", "2.6", "2.22")
+				panelReg2.tag_config("rdx", foreground="blue")
 			elif key == 'rsi':
-				panelReg.tag_add("rsi", "3.6", "3.22")
-				panelReg.tag_config("rsi", foreground="blue")
+				panelReg1.tag_add("rsi", "3.6", "3.22")
+				panelReg1.tag_config("rsi", foreground="blue")
 			elif key == 'rdi':
-				panelReg.tag_add("rdi", "3.30", "3.46")
-				panelReg.tag_config("rdi", foreground="blue")
+				panelReg2.tag_add("rdi", "3.6", "3.22")
+				panelReg2.tag_config("rdi", foreground="blue")
 			elif key == 'rip':
-				panelReg.tag_add("rip", "4.6", "4.22")
-				panelReg.tag_config("rip", foreground="blue")
+				panelReg1.tag_add("rip", "4.6", "4.22")
+				panelReg1.tag_config("rip", foreground="blue")
 			elif key == 'rsp':
-				panelReg.tag_add("rsp", "4.30", "4.46")
-				panelReg.tag_config("rsp", foreground="blue")
+				panelReg2.tag_add("rsp", "4.6", "4.22")
+				panelReg2.tag_config("rsp", foreground="blue")
 			elif key == 'rbp':
-				panelReg.tag_add("rbp", "5.6", "5.22")
-				panelReg.tag_config("rbp", foreground="blue")
+				panelReg1.tag_add("rbp", "5.6", "5.22")
+				panelReg1.tag_config("rbp", foreground="blue")
 			elif key == 'r8':
-				panelReg.tag_add("rbp", "5.30", "5.46")
-				panelReg.tag_config("rbp", foreground="blue")
+				panelReg2.tag_add("rbp", "5.6", "5.22")
+				panelReg2.tag_config("rbp", foreground="blue")
 			elif key == 'r9':
-				panelReg.tag_add("r9", "6.6", "6.22")
-				panelReg.tag_config("r9", foreground="blue")
+				panelReg1.tag_add("r9", "6.6", "6.22")
+				panelReg1.tag_config("r9", foreground="blue")
 			elif key == 'r10':
-				panelReg.tag_add("r10", "6.30", "6.46")
-				panelReg.tag_config("r10", foreground="blue")
+				panelReg2.tag_add("r10", "6.6", "6.22")
+				panelReg2.tag_config("r10", foreground="blue")
 			elif key == 'r11':
-				panelReg.tag_add("r11", "7.6", "7.22")
-				panelReg.tag_config("r11", foreground="blue")
+				panelReg1.tag_add("r11", "7.6", "7.22")
+				panelReg1.tag_config("r11", foreground="blue")
 			elif key == 'r12':
-				panelReg.tag_add("r12", "7.30", "7.46")
-				panelReg.tag_config("r12", foreground="blue")
+				panelReg2.tag_add("r12", "7.6", "7.22")
+				panelReg2.tag_config("r12", foreground="blue")
 			elif key == 'r13':
-				panelReg.tag_add("r13", "8.6", "8.22")
-				panelReg.tag_config("r13", foreground="blue")
+				panelReg1.tag_add("r13", "8.6", "8.22")
+				panelReg1.tag_config("r13", foreground="blue")
 			elif key == 'r14':
-				panelReg.tag_add("r14", "8.30", "8.46")
-				panelReg.tag_config("r14", foreground="blue")
+				panelReg2.tag_add("r14", "8.6", "8.22")
+				panelReg2.tag_config("r14", foreground="blue")
 			elif key == 'r15':
-				panelReg.tag_add("r15", "9.6", "9.22")
-				panelReg.tag_config("r15", foreground="blue")
+				panelReg1.tag_add("r15", "9.6", "9.22")
+				panelReg1.tag_config("r15", foreground="blue")
 
 	oldregister = newregister
 
@@ -514,8 +607,10 @@ if __name__ == "__main__":
 	frame1.grid(row=0, column=0, sticky=W+N)
 	panelDis = Text(frame1, height=30, width=110)
 	panelDis.grid(row=8, column=0, sticky=W+N)
-	panelReg = Text(frame1, height=8, width=110)
-	panelReg.grid(row=0, column=0, sticky=W+N)
+	panelReg1 = Text(frame1, height=7, width=55)
+	panelReg1.grid(row=0, column=0, sticky=W+N)
+	panelReg2 = Text(frame1, height=7, width=55)
+	panelReg2.grid(row=0, column=0, sticky=E+N)
 	panelStack = Text(frame1, height=12, width=110)
 	panelStack.grid(row=33, column=0, sticky=W+N)
 
