@@ -5,7 +5,7 @@ from functools import wraps
 
 global oldregister
 global old_inp
-global newrip
+global neweip
 global nowmodule
 global premodule
 global iatEnd
@@ -13,11 +13,8 @@ global iatStart
 global firstAddress
 global secondAddress
 
-oldregister = { 'rax' : '0000000000000000', 'rbx' : '0000000000000000', 'rcx' : '0000000000000000', 'rdx' : '0000000000000000', 'rsi' : '0000000000000000', 
-				'rdi' : '0000000000000000', 'rip' : '0000000000000000', 'rsp' : '0000000000000000', 'rbp' : '0000000000000000', 'r8' : '0000000000000000', 
-				'r9' : '0000000000000000', 'r10' : '0000000000000000', 'r11' : '0000000000000000', 'r12' : '0000000000000000', 'r13' : '0000000000000000', 
-				'r14' : '0000000000000000', 'r15' : '0000000000000000' }
-
+oldregister = { 'eax' : '00000000', 'ebx' : '00000000', 'ecx' : '00000000', 'edx' : '00000000', 'esi' : '00000000', 'edi' : '00000000', 
+			 'eip' : '00000000', 'esp' : '00000000', 'ebp' : '00000000' }
 
 
 
@@ -34,21 +31,12 @@ def memoize(func):
 
 
 @memoize
-def extractGrave(string, grave='`'):
-	try:
-		nov = string.replace('`', '')
-		return nov
-	except ValueError:
-		return -1
+def apifunc(sym):
+	child.sendline('.printf "%y", poi(' + sym + ')')
+	child.expect('0:000> ')
+	return newstdout.getvalue()
 
 
-@memoize
-def plusGrave(string, grave='`'):
-	try:
-		nov = string[:8] + '`' + string[8:17]
-		return nov
-	except ValueError:
-		return -1
 
 
 # 괄호 안의 주소를 찾기 위한 함수.
@@ -59,13 +47,6 @@ def extract(string, start='(', stop=')'):
 		return nov
 	except ValueError:
 		return -1
-
-
-@memoize
-def apifunc(sym):
-	child.sendline('.printf "%y", poi(' + sym + ')')
-	child.expect('0:000> ')
-	return newstdout.getvalue()
 
 
 
@@ -85,7 +66,7 @@ def findiat():
 	newstdout.seek(0)
 	for line in lmResult.splitlines():
 		if line.find(nowmodule) >= 1:
-			imgbase = line[:17]
+			imgbase = line[:8]
 			break
 
 	child.sendline('!dh -f'+ imgbase)
@@ -103,7 +84,6 @@ def findiat():
 	iatStartAddress = iatstartnsize[0]
 	iatEndAddress = int(iatstartnsize[0], 16) + int(iatstartnsize[1], 16)
 	hexiatEndAddress = hex(iatEndAddress)
-	imgbase = extractGrave(imgbase)
 	iatStart = int(iatStartAddress, 16) + int(imgbase, 16)
 	iatEnd = int(hexiatEndAddress, 16) + int(imgbase, 16)
 	newstdout.truncate(0)
@@ -121,29 +101,28 @@ def asmview(preins, isinternal, adres):
 
 	global firstAddress
 	global secondAddress
-	global newrip
+	global neweip
 
 	panelDis.delete(1.0, END)
 	newstdout.truncate(0)
 	newstdout.seek(0)
 
 	if isinternal == 0:
-		newrip = adres
-	ubins = "ub " + newrip + " l9"
-
+		neweip = adres
+	ubins = "ub " + neweip + " l9"
 	child.sendline(ubins)
 	child.expect('0:000> ')
 	ubResult = newstdout.getvalue()
 	resultLN = ubResult.find('\n')
 	resultEnd = ubResult.find('0:000> ')
 
-	firstAddress = extractGrave(ubResult[resultLN+1:resultLN+18])
+	firstAddress = ubResult[resultLN+1:resultLN+9]
 
 	view = ubResult[resultLN+1:resultEnd-1] + "\n"
 	newstdout.truncate(0)
 	newstdout.seek(0)
 
-	uins = "u " + newrip + " l12"
+	uins = "u " + neweip + " l14"
 	child.sendline(uins)
 	child.expect('0:000> ')
 	uResult = newstdout.getvalue()
@@ -173,14 +152,12 @@ def asmview(preins, isinternal, adres):
 		if line == '0:000> ':
 			break
 
-		secondAddress = extractGrave(line[:17])
+		secondAddress = line[:8]
 
 		newstdout.truncate(0)
 		newstdout.seek(0)
 		isCallExist = line.find("call")
 		callAddress = extract(line)
-		if callAddress != -1:
-			callAddress = extractGrave(callAddress)
 		if isCallExist != -1 and callAddress != -1:
 			sym = callAddress
 			if iatStart <= int(callAddress, 16) <= iatEnd:
@@ -201,7 +178,7 @@ def asmview(preins, isinternal, adres):
 				indirect = apifunc(sym)
 				newstdout.truncate(0)
 				newstdout.seek(0)
-				if indirect[:4] == "25ff":
+				if indirect[4:8] == "25ff":
 					inp = 'u ' + callAddress
 					child.sendline(inp)
 					child.expect('0:000> ')
@@ -227,18 +204,16 @@ def asmview(preins, isinternal, adres):
 	if isinternal == 1:
 		first = "1.0"
 		while True:
-			newrip2 = plusGrave(newrip)
-			ripfirst = panelDis.search(newrip2, first, END)
-			if not ripfirst:
+			eipfirst = panelDis.search(neweip, first, END)
+			if not eipfirst:
 				break
-			ripend = panelDis.search('\n', ripfirst, END)
-			panelDis.tag_add("one", ripfirst, ripend)
+			eipend = panelDis.search('\n', eipfirst, END)
+			panelDis.tag_add("one", eipfirst, eipend)
 			panelDis.tag_config("one", foreground="red")
-			first = ripend
+			first = eipend
 
 	newstdout.truncate(0)
 	newstdout.seek(0)
-	
 
 
 
@@ -250,7 +225,7 @@ def asmview(preins, isinternal, adres):
 """
 def outview():
 	global oldregister
-	global newrip
+	global neweip
 	global premodule
 	global nowmodule
 
@@ -261,20 +236,14 @@ def outview():
 	child.expect('0:000> ')
 	rResult = newstdout.getvalue()
 
-	newregister = { 'rax' : rResult[4:20], 'rbx' : rResult[25:42], 'rcx' : rResult[46:62], 'rdx' : rResult[67:83], 'rsi' : rResult[88:104], 
-					'rdi' : rResult[109:125], 'rip' : rResult[130:146], 'rsp' : rResult[151:167], 'rbp' : rResult[172:188], 'r8' : rResult[193:209], 
-					'r9' : rResult[214:230], 'r10' : rResult[235:251], 'r11' : rResult[256:272], 'r12' : rResult[277:293], 'r13' : rResult[298:314], 
-					'r14' : rResult[319:335], 'r15' : rResult[340:356] }
+	newregister = { 'eax' : rResult[4:12], 'ebx' : rResult[17:26], 'ecx' : rResult[30:38], 'edx' : rResult[43:52], 'esi' : rResult[56:64], 'edi' : rResult[69:77], 
+			 		'eip' : rResult[82:90], 'esp' : rResult[95:103], 'ebp' : rResult[108:116] }
 
-	view = 'rax = ' + newregister['rax'] + '\t\t' + 'rbx = ' + newregister['rbx'] + "\n"
-	view = view + 'rcx = ' + newregister['rcx'] + '\t\t' + 'rdx = ' + newregister['rdx'] + "\n"
-	view = view + 'rsi = ' + newregister['rsi'] + '\t\t' + 'rdi = ' + newregister['rdi'] + "\n"
-	view = view + 'rip = ' + newregister['rip'] + '\t\t' + 'rsp = ' + newregister['rsp'] + "\n"
-	view = view + 'rbp = ' + newregister['rbp'] + '\t\t' + 'r8  = ' + newregister['r8'] + "\n"
-	view = view + 'r9  = ' + newregister['r9']  + '\t\t' + 'r10 = ' + newregister['r10'] + "\n"
-	view = view + 'r11 = ' + newregister['r11'] + '\t\t' + 'r12 = ' + newregister['r12'] + "\n"
-	view = view + 'r13 = ' + newregister['r13'] + '\t\t' + 'r14 = ' + newregister['r14'] + "\n"
-	view = view + 'r15 = ' + newregister['r15'] + "\n"
+	view = 'eax = ' + newregister['eax'] + '\t\t' + 'ebx = ' + newregister['ebx'] + "\n"
+	view = view + 'ecx = ' + newregister['ecx'] + '\t\t' + 'edx = ' + newregister['edx'] + "\n"
+	view = view + 'esi = ' + newregister['esi'] + '\t\t' + 'edi = ' + newregister['edi'] + "\n"
+	view = view + 'eip = ' + newregister['eip'] + '\t\t' + 'esp = ' + newregister['esp'] + "\n"
+	view = view + 'ebp = ' + newregister['ebp'] + "\n"
 	view = view + "" + "\n\n"
 	panelDis.delete(1.0, END)
 	panelReg.delete(1.0, END)
@@ -283,57 +252,33 @@ def outview():
 
 	for key in oldregister:
 		if oldregister[key] != newregister[key]:
-			if key == 'rax':
-				panelReg.tag_add("rax", "1.6", "1.22")
-				panelReg.tag_config("rax", foreground="blue")
-			elif key == 'rbx':
-				panelReg.tag_add("rbx", "1.30", "1.46")
-				panelReg.tag_config("rbx", foreground="blue")
-			elif key == 'rcx':
-				panelReg.tag_add("rcx", "2.6", "2.22")
-				panelReg.tag_config("rcx", foreground="blue")
-			elif key == 'rdx':
-				panelReg.tag_add("rdx", "2.30", "2.46")
-				panelReg.tag_config("rdx", foreground="blue")
-			elif key == 'rsi':
-				panelReg.tag_add("rsi", "3.6", "3.22")
-				panelReg.tag_config("rsi", foreground="blue")
-			elif key == 'rdi':
-				panelReg.tag_add("rdi", "3.30", "3.46")
-				panelReg.tag_config("rdi", foreground="blue")
-			elif key == 'rip':
-				panelReg.tag_add("rip", "4.6", "4.22")
-				panelReg.tag_config("rip", foreground="blue")
-			elif key == 'rsp':
-				panelReg.tag_add("rsp", "4.30", "4.46")
-				panelReg.tag_config("rsp", foreground="blue")
-			elif key == 'rbp':
-				panelReg.tag_add("rbp", "5.6", "5.22")
-				panelReg.tag_config("rbp", foreground="blue")
-			elif key == 'r8':
-				panelReg.tag_add("rbp", "5.30", "5.46")
-				panelReg.tag_config("rbp", foreground="blue")
-			elif key == 'r9':
-				panelReg.tag_add("r9", "6.6", "6.22")
-				panelReg.tag_config("r9", foreground="blue")
-			elif key == 'r10':
-				panelReg.tag_add("r10", "6.30", "6.46")
-				panelReg.tag_config("r10", foreground="blue")
-			elif key == 'r11':
-				panelReg.tag_add("r11", "7.6", "7.22")
-				panelReg.tag_config("r11", foreground="blue")
-			elif key == 'r12':
-				panelReg.tag_add("r12", "7.30", "7.46")
-				panelReg.tag_config("r12", foreground="blue")
-			elif key == 'r13':
-				panelReg.tag_add("r13", "8.6", "8.22")
-				panelReg.tag_config("r13", foreground="blue")
-			elif key == 'r14':
-				panelReg.tag_add("r14", "8.30", "8.46")
-				panelReg.tag_config("r14", foreground="blue")
-			elif key == 'r15':
-				panelReg.tag_add("r15", "9.6", "9.22")
-				panelReg.tag_config("r15", foreground="blue")
+			if key == 'eax':
+				panelReg.tag_add("eax", "1.6", "1.14")
+				panelReg.tag_config("eax", foreground="blue")
+			elif key == 'ebx':
+				panelReg.tag_add("ebx", "1.22", "1.30")
+				panelReg.tag_config("ebx", foreground="blue")
+			elif key == 'ecx':
+				panelReg.tag_add("ecx", "2.6", "2.14")
+				panelReg.tag_config("ecx", foreground="blue")
+			elif key == 'edx':
+				panelReg.tag_add("edx", "2.22", "2.30")
+				panelReg.tag_config("edx", foreground="blue")
+			elif key == 'esi':
+				panelReg.tag_add("esi", "3.6", "3.14")
+				panelReg.tag_config("esi", foreground="blue")
+			elif key == 'edi':
+				panelReg.tag_add("edi", "3.22", "3.30")
+				panelReg.tag_config("edi", foreground="blue")
+			elif key == 'eip':
+				panelReg.tag_add("eip", "4.6", "4.14")
+				panelReg.tag_config("eip", foreground="blue")
+			elif key == 'esp':
+				panelReg.tag_add("esp", "4.22", "4.30")
+				panelReg.tag_config("esp", foreground="blue")
+			elif key == 'ebp':
+				panelReg.tag_add("ebp", "5.6", "5.14")
+				panelReg.tag_config("ebp", foreground="blue")
 
 	oldregister = newregister
 
@@ -343,9 +288,9 @@ def outview():
 	preins = ""
 	counts = 0
 	for line in rResult.splitlines():
-		if counts == 8:
+		if counts == 3:
 			nowmodule = re.split(r"[\+\!]", line)[0]
-		elif counts == 9:
+		elif counts == 4:
 			preins = line
 		counts = counts+1
 	newstdout.truncate(0)
@@ -361,21 +306,20 @@ def outview():
 	# 아래는 디스어셈블리 창을 호출하는 부분이다.
 	# 받는 인자로는 현재 명령어 라인(굳이 따로 설정하는 이유는 windbg의 경우 현재 명령어 라인에서만 제공해주는 정보가 있기 때문이다. api 명이나 분기 여부 등),
 	# outview()에서 호출되었는지 여부(이 경우에는 1이다)가 있다.
-	# newrip는 전역 변수로 설정해서 인자로 넣지는 않았다.
-
-	newrip = newregister['rip']
+	# neweip는 전역 변수로 설정해서 인자로 넣지는 않았다.
+	neweip = newregister['eip']
 	isinternal = 1
 	asmview(preins, isinternal, "")
 
 
 	# 아래는 스택 창을 보여주는 부분이다.
 	# 기본적으로 dds esp 명령어에 dda esp 명령어의 결과물을 붙여서 내놓는다.
-	child.sendline('dqs rsp l18')
+	child.sendline('dds esp l24')
 	child.expect('0:000> ')
 	stackResult = newstdout.getvalue()
 	newstdout.truncate(0)
 	newstdout.seek(0)
-	child.sendline('dqa @rsp l18')
+	child.sendline('dda @esp l24')
 	child.expect('0:000> ')
 	stackResult2 = newstdout.getvalue()
 	stackResultEnd = stackResult.find('0:000> ')
@@ -405,7 +349,7 @@ def outview():
 """
 def func(event):
 	global old_inp
-	global newrip
+	global neweip
 	global firstAddress
 	global secondAddress
 
@@ -425,9 +369,7 @@ def func(event):
 		child.sendline(inp)
 		child.expect('0:000> ')
 		tpResult = newstdout.getvalue()
-		# x64의 경우에는 레지스터의 결과가 안나오고 모듈 이름이 나온다.
-		# 여러 예외도 안해봤고 여러 예외적인 사항은 테스트를 안해봐서 우선 이렇게 한다. 즉 bp는 잘 처리된다.
-		if nowmodule == re.split(r"[\+\!]", tpResult)[0]:
+		if tpResult[:3] == 'eax':
 			panelCommand.config(state=NORMAL)
 			panelCommand.insert(END, inp)
 			panelCommand.insert(END, '\n')
@@ -446,7 +388,7 @@ def func(event):
 	# 다음은 자체 명령어들이다.
 	elif firstinp == ',v':
 		# 어지간한 경우에 자동으로 왼쪽 창들을 업데이트 시키지만 그렇지 않는 경우도 존재한다.
-		# 예를들면 직접 rip를 수정하는 경우가 그렇다. 이 경우에는 이 명령어를 사용하여 왼쪽 창들을 업데이트시킨다.
+		# 예를들면 직접 eip를 수정하는 경우가 그렇다. 이 경우에는 이 명령어를 사용하여 왼쪽 창들을 업데이트시킨다.
 		panelCommand.config(state=NORMAL)
 		panelCommand.insert(END, inp)
 		panelCommand.insert(END, '\n')
