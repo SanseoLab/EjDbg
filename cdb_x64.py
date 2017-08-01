@@ -384,7 +384,7 @@ def outview():
 	stackResult2 = stackResult2[:stackResultEnd-1]
 	newstackResult = ""
 	for line, line2 in zip(stackResult.splitlines(), stackResult2.splitlines()):
-		line = line + "\t" + line2[18:]
+		line = line + "\t\t\t" + line2[36:]
 		newstackResult = newstackResult + line + "\n"
 
 	view2 = newstackResult + "\n"
