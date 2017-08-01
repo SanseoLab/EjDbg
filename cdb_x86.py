@@ -238,47 +238,95 @@ def outview():
 
 	newregister = { 'eax' : rResult[4:12], 'ebx' : rResult[17:26], 'ecx' : rResult[30:38], 'edx' : rResult[43:52], 'esi' : rResult[56:64], 'edi' : rResult[69:77], 
 			 		'eip' : rResult[82:90], 'esp' : rResult[95:103], 'ebp' : rResult[108:116] }
+	registerval = [1, 1, 1, 1, 1, 1]
+	# eax, ebx, ecx, edx, esi, edi
 
-	view = 'eax = ' + newregister['eax'] + '\t\t' + 'ebx = ' + newregister['ebx'] + "\n"
-	view = view + 'ecx = ' + newregister['ecx'] + '\t\t' + 'edx = ' + newregister['edx'] + "\n"
-	view = view + 'esi = ' + newregister['esi'] + '\t\t' + 'edi = ' + newregister['edi'] + "\n"
-	view = view + 'eip = ' + newregister['eip'] + '\t\t' + 'esp = ' + newregister['esp'] + "\n"
+	newstdout.truncate(0)
+	newstdout.seek(0)
+	child.sendline('.printf "eax ";da @eax; .printf "ebx "; da @ebx; .printf "ecx "; da @ecx; .printf "edx "; da @edx; .printf "esi "; da @esi; .printf "edi "; da @edi; ')
+	child.expect('0:000> ')
+	dResult = newstdout.getvalue()
+
+	for line in dResult.splitlines():
+		if line.split()[0] == 'eax':
+			if line.find('??')>0:
+				registerval[0] = ""
+			else :
+				registerval[0] = line[13:]
+		elif line.split()[0] == 'ebx':
+			if line.find('??')>0:
+				registerval[1] = ""
+			else :
+				registerval[1] = line[13:]
+		elif line.split()[0] == 'ecx':
+			if line.find('??')>0:
+				registerval[2] = ""
+			else :
+				registerval[2] = line[13:]
+		elif line.split()[0] == 'edx':
+			if line.find('??')>0:
+				registerval[3] = ""
+			else :
+				registerval[3] = line[13:]
+		elif line.split()[0] == 'esi':
+			if line.find('??')>0:
+				registerval[4] = ""
+			else :
+				registerval[4] = line[13:]
+		elif line.split()[0] == 'edi':
+			if line.find('??')>0:
+				registerval[5] = ""
+			else :
+				registerval[5] = line[13:]
+	
+	view = 'eax = ' + newregister['eax'] + registerval[0] + "\n"
+	view = view + 'ecx = ' + newregister['ecx'] + registerval[2] + "\n"
+	view = view + 'esi = ' + newregister['esi'] + registerval[4] + "\n"
+	view = view + 'eip = ' + newregister['eip'] + "\n"
 	view = view + 'ebp = ' + newregister['ebp'] + "\n"
-	view = view + "" + "\n\n"
+
+	view2 = 'ebx = ' + newregister['ebx'] + registerval[1] + "\n"
+	view2 = view2 + 'edx = ' + newregister['edx'] + registerval[3] + "\n"
+	view2 = view2 + 'edi = ' + newregister['edi'] + registerval[5] + "\n"
+	view2 = view2 + 'esp = ' + newregister['esp'] + "\n"
+
 	panelDis.delete(1.0, END)
-	panelReg.delete(1.0, END)
+	panelReg1.delete(1.0, END)
+	panelReg2.delete(1.0, END)
 	panelStack.delete(1.0, END)
-	panelReg.insert(END, view)
+
+	panelReg1.insert(END, view)
+	panelReg2.insert(END, view2)
 
 	for key in oldregister:
 		if oldregister[key] != newregister[key]:
 			if key == 'eax':
-				panelReg.tag_add("eax", "1.6", "1.14")
-				panelReg.tag_config("eax", foreground="blue")
+				panelReg1.tag_add("eax", "1.6", "1.14")
+				panelReg1.tag_config("eax", foreground="blue")
 			elif key == 'ebx':
-				panelReg.tag_add("ebx", "1.22", "1.30")
-				panelReg.tag_config("ebx", foreground="blue")
+				panelReg2.tag_add("ebx", "1.6", "1.14")
+				panelReg2.tag_config("ebx", foreground="blue")
 			elif key == 'ecx':
-				panelReg.tag_add("ecx", "2.6", "2.14")
-				panelReg.tag_config("ecx", foreground="blue")
+				panelReg1.tag_add("ecx", "2.6", "2.14")
+				panelReg1.tag_config("ecx", foreground="blue")
 			elif key == 'edx':
-				panelReg.tag_add("edx", "2.22", "2.30")
-				panelReg.tag_config("edx", foreground="blue")
+				panelReg2.tag_add("edx", "2.6", "2.14")
+				panelReg2.tag_config("edx", foreground="blue")
 			elif key == 'esi':
-				panelReg.tag_add("esi", "3.6", "3.14")
-				panelReg.tag_config("esi", foreground="blue")
+				panelReg1.tag_add("esi", "3.6", "3.14")
+				panelReg1.tag_config("esi", foreground="blue")
 			elif key == 'edi':
-				panelReg.tag_add("edi", "3.22", "3.30")
-				panelReg.tag_config("edi", foreground="blue")
+				panelReg2.tag_add("edi", "3.6", "3.14")
+				panelReg2.tag_config("edi", foreground="blue")
 			elif key == 'eip':
-				panelReg.tag_add("eip", "4.6", "4.14")
-				panelReg.tag_config("eip", foreground="blue")
+				panelReg1.tag_add("eip", "4.6", "4.14")
+				panelReg1.tag_config("eip", foreground="blue")
 			elif key == 'esp':
-				panelReg.tag_add("esp", "4.22", "4.30")
-				panelReg.tag_config("esp", foreground="blue")
+				panelReg2.tag_add("esp", "4.6", "4.14")
+				panelReg2.tag_config("esp", foreground="blue")
 			elif key == 'ebp':
-				panelReg.tag_add("ebp", "5.6", "5.14")
-				panelReg.tag_config("ebp", foreground="blue")
+				panelReg1.tag_add("ebp", "5.6", "5.14")
+				panelReg1.tag_config("ebp", foreground="blue")
 
 	oldregister = newregister
 
@@ -455,9 +503,11 @@ if __name__ == "__main__":
 	frame1 = Frame(frame, height=50, width=110)
 	frame1.grid(row=0, column=0, sticky=W+N)
 	panelDis = Text(frame1, height=30, width=110)
-	panelDis.grid(row=8, column=0, sticky=W+N)
-	panelReg = Text(frame1, height=8, width=110)
-	panelReg.grid(row=0, column=0, sticky=W+N)
+	panelDis.grid(row=8, column=0, sticky=W+S)
+	panelReg1 = Text(frame1, height=7, width=55)
+	panelReg1.grid(row=0, column=0, sticky=W+N)
+	panelReg2 = Text(frame1, height=7, width=55)
+	panelReg2.grid(row=0, column=0, sticky=E+N)
 	panelStack = Text(frame1, height=12, width=110)
 	panelStack.grid(row=33, column=0, sticky=W+N)
 
@@ -497,4 +547,3 @@ if __name__ == "__main__":
 	E5.bind('<Return>', func)
 	root.mainloop()
 	child.close()
-
