@@ -17,7 +17,7 @@ Windows and Linux Debugger FrontEnd for cdb and gdb
 
 
 ## 스크린샷
-![start](http://cfile23.uf.tistory.com/image/2295F8335979868330A9B9)
+![start](http://cfile21.uf.tistory.com/image/27884C3359805F223527B8)
 
 
 
