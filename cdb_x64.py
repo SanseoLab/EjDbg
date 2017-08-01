@@ -1,5 +1,6 @@
 import winpexpect, sys, io, re
 from tkinter import *
+from functools import wraps
 
 
 global oldregister
@@ -19,6 +20,20 @@ oldregister = { 'rax' : '0000000000000000', 'rbx' : '0000000000000000', 'rcx' : 
 
 
 
+
+def memoize(func):
+	cache = {}
+	@wraps(func)
+	def wrap(*args):
+		if args not in cache:
+			cache[args] = func(*args)
+		return cache[args]
+	return wrap
+
+
+
+
+@memoize
 def extractGrave(string, grave='`'):
 	try:
 		nov = string.replace('`', '')
@@ -27,7 +42,7 @@ def extractGrave(string, grave='`'):
 		return -1
 
 
-
+@memoize
 def plusGrave(string, grave='`'):
 	try:
 		nov = string[:8] + '`' + string[8:17]
@@ -36,14 +51,21 @@ def plusGrave(string, grave='`'):
 		return -1
 
 
-
 # 괄호 안의 주소를 찾기 위한 함수.
+@memoize
 def extract(string, start='(', stop=')'):
 	try:
 		nov = string[string.index(start)+1:string.index(stop)]
 		return nov
 	except ValueError:
 		return -1
+
+
+@memoize
+def apifunc(sym):
+	child.sendline('.printf "%y", poi(' + sym + ')')
+	child.expect('0:000> ')
+	return newstdout.getvalue()
 
 
 
@@ -117,8 +139,7 @@ def asmview(preins, isinternal, adres):
 
 	firstAddress = extractGrave(ubResult[resultLN+1:resultLN+18])
 
-	view = '--------------------------- assembly -----------------------------------' + "\n"
-	view = view + ubResult[resultLN+1:resultEnd-1] + "\n"
+	view = ubResult[resultLN+1:resultEnd-1] + "\n"
 	newstdout.truncate(0)
 	newstdout.seek(0)
 
@@ -161,29 +182,23 @@ def asmview(preins, isinternal, adres):
 		if callAddress != -1:
 			callAddress = extractGrave(callAddress)
 		if isCallExist != -1 and callAddress != -1:
+			sym = callAddress
 			if iatStart <= int(callAddress, 16) <= iatEnd:
-				sym = callAddress
-				child.sendline('.printf "%y", poi(' + sym + ')')
-				child.expect('0:000> ')
-				apilist = newstdout.getvalue()
+				apilist = apifunc(sym)
 				newstdout.truncate(0)
 				newstdout.seek(0)
 				apilist = apilist[:-7]
-				line = line[:-1] +'\t' + apilist + '\n'
+				line = line +'\t' + apilist + '\n'
 				panelDis.insert(END, line)
 
 				apiFirst = panelDis.search(apilist, "1.0", END)
 				apiEnd = panelDis.search('\n', apiFirst, END)
 				panelDis.tag_add("two", apiFirst, apiEnd)
 				panelDis.tag_config("two", foreground="blue")
-
 				continue
 
 			else:
-				sym = callAddress
-				child.sendline('.printf "%y", poi(' + sym + ')')
-				child.expect('0:000> ')
-				indirect = newstdout.getvalue()
+				indirect = apifunc(sym)
 				newstdout.truncate(0)
 				newstdout.seek(0)
 				if indirect[:4] == "25ff":
@@ -195,14 +210,12 @@ def asmview(preins, isinternal, adres):
 					newstdout.seek(0)
 					addr = extract(indr.splitlines()[1])
 					sym2 = str(addr)
-					child.sendline('.printf "%y", poi(' + sym2 + ')')
-					child.expect('0:000> ')
-					apilist2 = newstdout.getvalue()
-					apilist2 = apilist2[:-7]
-					line = line[:-1] +'\t' + apilist2 + '\n'
+					apilist = apifunc(sym2)
+					apilist = apilist[:-7]
+					line = line +'\t' + apilist + '\n'
 					panelDis.insert(END, line)
 
-					apiFirst = panelDis.search(apilist2, "1.0", END)
+					apiFirst = panelDis.search(apilist, "1.0", END)
 					apiEnd = panelDis.search('\n', apiFirst, END)
 					panelDis.tag_add("two", apiFirst, apiEnd)
 					panelDis.tag_config("two", foreground="blue")
@@ -249,17 +262,16 @@ def outview():
 	rResult = newstdout.getvalue()
 
 	newregister = { 'rax' : rResult[4:20], 'rbx' : rResult[25:42], 'rcx' : rResult[46:62], 'rdx' : rResult[67:83], 'rsi' : rResult[88:104], 
-					'rdi' : rResult[109:125], 'rip' : rResult[130:147], 'rsp' : rResult[151:167], 'rbp' : rResult[172:188], 'r8' : rResult[193:209], 
+					'rdi' : rResult[109:125], 'rip' : rResult[130:146], 'rsp' : rResult[151:167], 'rbp' : rResult[172:188], 'r8' : rResult[193:209], 
 					'r9' : rResult[214:230], 'r10' : rResult[235:251], 'r11' : rResult[256:272], 'r12' : rResult[277:293], 'r13' : rResult[298:314], 
 					'r14' : rResult[319:335], 'r15' : rResult[340:356] }
 
-	view = '-------------------------- registers -----------------------------------' + "\n"
-	view = view + 'rax = ' + newregister['rax'] + '\t\t' + 'rbx = ' + newregister['rbx'] + "\n"
+	view = 'rax = ' + newregister['rax'] + '\t\t' + 'rbx = ' + newregister['rbx'] + "\n"
 	view = view + 'rcx = ' + newregister['rcx'] + '\t\t' + 'rdx = ' + newregister['rdx'] + "\n"
 	view = view + 'rsi = ' + newregister['rsi'] + '\t\t' + 'rdi = ' + newregister['rdi'] + "\n"
 	view = view + 'rip = ' + newregister['rip'] + '\t\t' + 'rsp = ' + newregister['rsp'] + "\n"
-	view = view + 'rbp = ' + newregister['rbp'] + '\t\t' + 'r8 = ' + newregister['r8'] + "\n"
-	view = view + 'r9 = ' + newregister['r9'] + '\t\t' + 'r10 = ' + newregister['r10'] + "\n"
+	view = view + 'rbp = ' + newregister['rbp'] + '\t\t' + 'r8  = ' + newregister['r8'] + "\n"
+	view = view + 'r9  = ' + newregister['r9']  + '\t\t' + 'r10 = ' + newregister['r10'] + "\n"
 	view = view + 'r11 = ' + newregister['r11'] + '\t\t' + 'r12 = ' + newregister['r12'] + "\n"
 	view = view + 'r13 = ' + newregister['r13'] + '\t\t' + 'r14 = ' + newregister['r14'] + "\n"
 	view = view + 'r15 = ' + newregister['r15'] + "\n"
@@ -272,55 +284,55 @@ def outview():
 	for key in oldregister:
 		if oldregister[key] != newregister[key]:
 			if key == 'rax':
-				panelReg.tag_add("rax", "2.6", "2.22")
+				panelReg.tag_add("rax", "1.6", "1.22")
 				panelReg.tag_config("rax", foreground="blue")
 			elif key == 'rbx':
-				panelReg.tag_add("rbx", "2.30", "2.46")
+				panelReg.tag_add("rbx", "1.30", "1.46")
 				panelReg.tag_config("rbx", foreground="blue")
 			elif key == 'rcx':
-				panelReg.tag_add("rcx", "3.6", "3.22")
+				panelReg.tag_add("rcx", "2.6", "2.22")
 				panelReg.tag_config("rcx", foreground="blue")
 			elif key == 'rdx':
-				panelReg.tag_add("rdx", "3.30", "3.46")
+				panelReg.tag_add("rdx", "2.30", "2.46")
 				panelReg.tag_config("rdx", foreground="blue")
 			elif key == 'rsi':
-				panelReg.tag_add("rsi", "4.6", "4.22")
+				panelReg.tag_add("rsi", "3.6", "3.22")
 				panelReg.tag_config("rsi", foreground="blue")
 			elif key == 'rdi':
-				panelReg.tag_add("rdi", "4.30", "4.46")
+				panelReg.tag_add("rdi", "3.30", "3.46")
 				panelReg.tag_config("rdi", foreground="blue")
 			elif key == 'rip':
-				panelReg.tag_add("rip", "5.6", "5.22")
+				panelReg.tag_add("rip", "4.6", "4.22")
 				panelReg.tag_config("rip", foreground="blue")
 			elif key == 'rsp':
-				panelReg.tag_add("rsp", "5.30", "5.47")
+				panelReg.tag_add("rsp", "4.30", "4.46")
 				panelReg.tag_config("rsp", foreground="blue")
 			elif key == 'rbp':
-				panelReg.tag_add("rbp", "6.6", "6.22")
+				panelReg.tag_add("rbp", "5.6", "5.22")
 				panelReg.tag_config("rbp", foreground="blue")
 			elif key == 'r8':
-				panelReg.tag_add("rbp", "6.29", "6.45")
+				panelReg.tag_add("rbp", "5.30", "5.46")
 				panelReg.tag_config("rbp", foreground="blue")
 			elif key == 'r9':
-				panelReg.tag_add("r9", "7.5", "7.21")
+				panelReg.tag_add("r9", "6.6", "6.22")
 				panelReg.tag_config("r9", foreground="blue")
 			elif key == 'r10':
-				panelReg.tag_add("r10", "7.29", "7.45")
+				panelReg.tag_add("r10", "6.30", "6.46")
 				panelReg.tag_config("r10", foreground="blue")
 			elif key == 'r11':
-				panelReg.tag_add("r11", "8.6", "8.22")
+				panelReg.tag_add("r11", "7.6", "7.22")
 				panelReg.tag_config("r11", foreground="blue")
 			elif key == 'r12':
-				panelReg.tag_add("r12", "8.30", "8.46")
+				panelReg.tag_add("r12", "7.30", "7.46")
 				panelReg.tag_config("r12", foreground="blue")
 			elif key == 'r13':
-				panelReg.tag_add("r13", "9.6", "9.22")
+				panelReg.tag_add("r13", "8.6", "8.22")
 				panelReg.tag_config("r13", foreground="blue")
 			elif key == 'r14':
-				panelReg.tag_add("r14", "9.30", "9.46")
+				panelReg.tag_add("r14", "8.30", "8.46")
 				panelReg.tag_config("r14", foreground="blue")
 			elif key == 'r15':
-				panelReg.tag_add("r15", "10.6", "10.22")
+				panelReg.tag_add("r15", "9.6", "9.22")
 				panelReg.tag_config("r15", foreground="blue")
 
 	oldregister = newregister
@@ -375,8 +387,7 @@ def outview():
 		line = line + "\t" + line2[18:]
 		newstackResult = newstackResult + line + "\n"
 
-	view2 = '---------------------------- stack -------------------------------------' + "\n"
-	view2 = view2 + newstackResult + "\n"
+	view2 = newstackResult + "\n"
 	panelStack.insert(END, view2)
 
 	newstdout.truncate(0)
@@ -544,4 +555,3 @@ if __name__ == "__main__":
 	E5.bind('<Return>', func)
 	root.mainloop()
 	child.close()
-
