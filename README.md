@@ -83,11 +83,12 @@ Windows and Linux Debugger FrontEnd for cdb and gdb
 - ,vs <address> | ,vs u | ,vs d : 인자로 주소를 넣은 경우 왼쪽 윈도우를 그 주소에 맞게 보여준다. u와 d를 인자로 넣은 경우 각각 윗 페이지 그리고 아래 페이지를 보여준다.
 
 
-### 2.3 개선 사항
+### 2.3 To do
 #### 공통
 - 실행 중인 프로세스 Attach 기능 추가
 - 커널 디버깅 기능 추가
 - scanf 같이 입력을 받는 기능도 추가한다.
+- 윈도우의 경우 winpexpect가 너무 느리기 때문에 COM을 이용한 방식을 알아보도록 한다. 리눅스의 경우 pexpect 나쁘지 않지만 더 편하게 파이썬 용 API가 제공되므로 이것을 이용한다.
 
 #### 개별
 - 더 기능을 추가한 후 .gdbinit에 정리할 부분은 정리한다.
@@ -97,10 +98,9 @@ Windows and Linux Debugger FrontEnd for cdb and gdb
 
 
 
-## 3. 나아갈
-  윈도우에서는 winpexpect가 너무 느리기 때문에 COM을 통해 사용할 수 있는지를 알아볼 것이며 Windbg 스크립트와 플러그인을 통해 추가적인 내용들을 만들 필요가 있다.<br>
-  리눅스에서는 Gdb가 Windbg와 비교해서도 너무 불편하기 때문에 PEDA를 참고해 기본적인 기능을 보충할 필요가 있다. Gdb의 경우도 스크립트나 플러그인 기능을 더 찾아본 후에 불가능할 시에는 PEDA의 방식이라던지 아니면 오픈소스를 직접 이용하는 방식이 필요하다.<br>
-  디스어셈블리 결과를 따로 저장하고 사용하는 OllyDbg처럼 디스어셈블러와 디버거의 중간 형태를 띄어야 할지에 대한 생각.
+## 3. Picture
+- Windbg의 경우 스크립트와 플러그인을 통해, Gdb의 define 외의 여러 기능들을 찾아서 추가적인 내용들을 만들 필요가 있다. 또한 Gdb가 Windbg와 비교해서도 너무 불편하기 때문에 PEDA, GEF 등을 참고해 기본적인 기능을 보충할 필요가 있다.
+- 디스어셈블리 결과를 따로 저장하고 사용하는 OllyDbg처럼 디스어셈블러와 디버거의 중간 형태를 띄어야 할지에 대한 생각. 하지만 디스어셈블러도 생각 중이므로 이쪽 기능에 너무 집착하지 않고 디버거에 충실하려고 한다.
 
 
 
@@ -112,17 +112,17 @@ Windows and Linux Debugger FrontEnd for cdb and gdb
 #### 참고1 ] 윈도우에서 API 정보 검색
   이 방식은 HlpViewer.exe를 이용해서 로컬에 저장된 도움말 문서들을 검색하는 방식이다. API 정보들이 들어있는 문서가 로컬에 저장되어 있다면 커맨드 라인에서 HlpViewer.exe를 여러 인자들과 함께 입력하여 해당 페이지를 보여주는 메커니즘이다.<br>
   개인적으로 Visual Studio 2015를 사용하는데 HlpViewer.exe가 이미 설치되어 있었다. 이제 도움말 문서들을 로컬에 설치하는 방식을 설명하겠다. 위의 "도움말" 탭을 누른 후 "도움말 콘텐츠 추가 및 제거"를 클릭한다. 디폴트로 "콘텐츠 관리" 탭이 보일 것이다. 본인의 경우 여러 목록이 보였고 몇 개는 "추가(보류 중)"인 것도 존재했다. 이것들을 모두 취소한 후 다음 하나만 "추가"를 클릭한다.<br>
-- "Windows Desktop App Development"<br>
+- > "Windows Desktop App Development"<br>
 
   설치 시 324MB의 크기였으며 이것만 선택한 이후 오른쪽 아래의 "업데이트" 버튼을 클릭한다. 이제 윈도우 API 도움말 문서가 로컬에 설치되었다.<br>
   실제 예제를 다뤄보도록 하겠다. 아래를 보면 먼저 HlpViewer.exe를 경로와 함께 실행한다.<br>
-- C:\"Program Files (x86)"\"Microsoft Help Viewer"\v2.2\HlpViewer.exe /catalogName VisualStudio14 /helpQuery "method=f1&query=securezeromemory"<br>
+- > C:\"Program Files (x86)"\"Microsoft Help Viewer"\v2.2\HlpViewer.exe /catalogName VisualStudio14 /helpQuery "method=f1&query=securezeromemory"<br>
 
   첫 번쨰 인자는 다음과 같다. 이 인자는 필수로서 현재 Visual Studio 2015를 사용하기 때문에 설정한 것이다.
-- /catalogName VisualStudio14<br>
+- > /catalogName VisualStudio14<br>
 
   다음은 해당 도움말 뷰어만을 켜는 것이 아니라 자동으로 특정 API 이름을 검색한 후 결과까지 보여주도록 인자를 설정한 것이다.
-- /helpQuery "method=f1&query=securezeromemory"<br>
+- > /helpQuery "method=f1&query=securezeromemory"<br>
 
   위에서는 SecureZeroMemory라는 API에 대한 정보를 얻기 위해 사용한 것이고 이제 저 부분에 다른 이름을 넣음으로써 자동으로 결과를 보여주게 만들 수 있다.<br>
 
