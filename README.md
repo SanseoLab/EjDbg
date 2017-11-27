@@ -128,5 +128,5 @@ Windows and Linux Debugger FrontEnd for cdb and gdb
 
   마지막으로 Windbg에서는 .shell 명령어를 통해 셸 명령을 실행할 수 있다. 참고로 인자 -x는 실행 이후 디버거에서 detach하는 명령이다. 그러므로 다음과 같이 사용할 수 있다.<br>
 
- > 0:000> .shell -x C:\"Program Files (x86)"\"Microsoft Help Viewer"\v2.2\HlpViewer.exe /catalogName VisualStudio14 /helpQuery "method=f1&query=securezeromemory"
+ > 0:000> .shell -x C:\"Program Files (x86)"\"Microsoft Help Viewer"\v2.2\HlpViewer.exe /catalogName VisualStudio14 /helpQuery "method=f1&query=securezeromemory" <br>
  > 0:000> 
