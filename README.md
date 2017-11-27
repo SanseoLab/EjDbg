@@ -20,8 +20,8 @@ Windows and Linux Debugger FrontEnd for cdb and gdb
 
 #### 1.1.2 사용
   명령 프롬프트에서 해당 파이썬 스크립트를 실행하며 인자로 실행 파일을 준다.
-- > python cdb_x86.py hello.exe
-- > python cdb_x64.py hello.exe
+ > python cdb_x86.py hello.exe
+ > python cdb_x64.py hello.exe
 
 
 ### 1.2 기능
